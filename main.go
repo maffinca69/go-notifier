@@ -62,14 +62,13 @@ func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
 
 	if isAvailableNewVersion(repo, latestRelease) {
 		notify(latestRelease, repo.Name)
+		cache.Save(repo.Name, latestRelease.TagName)
 	}
-
-	fmt.Println("Save new version to cache", latestRelease.TagName)
-	cache.Save(repo.Name, latestRelease.TagName)
 }
 
 func isAvailableNewVersion(repo infrastructure.RepositoryConfig, release api.Release) bool {
 	if cache.IsExists(repo.Name) == false {
+		cache.Save(repo.Name, release.TagName)
 		return false
 	}
 
