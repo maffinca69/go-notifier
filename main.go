@@ -21,16 +21,14 @@ func init() {
 
 func main() {
 	closer.Bind(main)
-	go func() {
-		c := cron.New()
+	c := cron.New()
 
-		if _, err := c.AddFunc(infrastructure.GetConfig().CronExpression, func() { checkUpdates() }); err != nil {
-			panic("Error start schedule function")
-		}
+	if _, err := c.AddFunc(infrastructure.GetConfig().CronExpression, func() { checkUpdates() }); err != nil {
+		panic("Error start schedule function")
+	}
 
-		c.Start()
-		closer.Close()
-	}()
+	c.Start()
+	closer.Close()
 
 	closer.Hold()
 }
@@ -42,25 +40,29 @@ func checkUpdates() {
 	wg.Add(count)
 
 	for _, repo := range infrastructure.GetConfig().Repository {
-		fmt.Println("Checking new version for:", repo.Name)
 		defer wg.Done()
-		var (
-			githubToken = os.Getenv("GITHUB_TOKEN")
-			releases    = api.GetReleases(repo.Url, githubToken)
-		)
-		if releases == nil || len(releases) == 0 {
-			fmt.Println(fmt.Sprintf("%s: not found releases. Skip", repo.Name))
-			return
-		}
-
-		var latestRelease = releases[0]
-
-		if isAvailableNewVersion(latestRelease) {
-			notify(latestRelease, repo.Name)
-		}
+		go notifyIfNeeded(repo)
 	}
 
 	wg.Wait()
+}
+
+func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
+	fmt.Println("Checking new version for:", repo.Name)
+	var (
+		githubToken = os.Getenv("GITHUB_TOKEN")
+		releases    = api.GetReleases(repo.Url, githubToken)
+	)
+	if releases == nil || len(releases) == 0 {
+		fmt.Println(fmt.Sprintf("%s: not found releases. Skip", repo.Name))
+		return
+	}
+
+	var latestRelease = releases[0]
+
+	if isAvailableNewVersion(latestRelease) {
+		notify(latestRelease, repo.Name)
+	}
 }
 
 func isAvailableNewVersion(release api.Release) bool {
