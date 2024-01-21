@@ -43,24 +43,21 @@ func checkUpdates() {
 
 	for _, repo := range infrastructure.GetConfig().Repository {
 		fmt.Println("Checking new version for:", repo.Name)
-		repo := repo
-		go func() {
-			defer wg.Done()
-			var (
-				githubToken = os.Getenv("GITHUB_TOKEN")
-				releases    = api.GetReleases(repo.Url, githubToken)
-			)
-			if releases == nil || len(releases) == 0 {
-				fmt.Println(fmt.Sprintf("%s: not found releases. Skip", repo.Name))
-				return
-			}
+		defer wg.Done()
+		var (
+			githubToken = os.Getenv("GITHUB_TOKEN")
+			releases    = api.GetReleases(repo.Url, githubToken)
+		)
+		if releases == nil || len(releases) == 0 {
+			fmt.Println(fmt.Sprintf("%s: not found releases. Skip", repo.Name))
+			return
+		}
 
-			var latestRelease = releases[0]
+		var latestRelease = releases[0]
 
-			if isAvailableNewVersion(latestRelease) {
-				notify(latestRelease, repo.Name)
-			}
-		}()
+		if isAvailableNewVersion(latestRelease) {
+			notify(latestRelease, repo.Name)
+		}
 	}
 
 	wg.Wait()
