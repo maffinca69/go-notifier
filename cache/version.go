@@ -2,43 +2,35 @@ package cache
 
 import (
 	"context"
-	"release-notifier/api"
 	"release-notifier/infrastructure"
 )
 
-func GetCurrentVersion(release api.Release) string {
+func GetCurrentVersion(repository string) string {
 	ctx := context.Background()
 
 	client := infrastructure.GetClient()
-	key := getCacheKey(release)
-	version, _ := client.Get(ctx, key).Result()
+	version, _ := client.Get(ctx, repository).Result()
 
 	return version
 }
 
-func Save(release api.Release) {
+func Save(repository string, version string) {
 	ctx := context.Background()
-	var key = getCacheKey(release)
 
 	client := infrastructure.GetClient()
-	if err := client.Set(ctx, key, release.TagName, 0).Err(); err != nil {
+	if err := client.Set(ctx, repository, version, 0).Err(); err != nil {
 		panic("Error save version to cache")
 	}
 }
 
-func IsExists(release api.Release) bool {
+func IsExists(repository string) bool {
 	ctx := context.Background()
 
 	client := infrastructure.GetClient()
-	key := getCacheKey(release)
-	exists, err := client.Exists(ctx, key).Result()
+	exists, err := client.Exists(ctx, repository).Result()
 	if err != nil {
 		panic(err)
 	}
 
 	return exists == 1
-}
-
-func getCacheKey(release api.Release) string {
-	return release.Url
 }

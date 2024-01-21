@@ -20,7 +20,6 @@ func init() {
 }
 
 func main() {
-	closer.Bind(main)
 	c := cron.New()
 
 	if _, err := c.AddFunc(infrastructure.GetConfig().CronExpression, func() { checkUpdates() }); err != nil {
@@ -30,6 +29,7 @@ func main() {
 	c.Start()
 
 	closer.Hold()
+	closer.Close()
 }
 
 func checkUpdates() {
@@ -43,9 +43,8 @@ func checkUpdates() {
 			notifyIfNeeded(repo)
 		}()
 	}
-	wg.Wait()
 
-	closer.Close()
+	wg.Wait()
 }
 
 func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
@@ -61,18 +60,20 @@ func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
 
 	var latestRelease = releases[0]
 
-	if isAvailableNewVersion(latestRelease) {
+	if isAvailableNewVersion(repo, latestRelease) {
 		notify(latestRelease, repo.Name)
 	}
+
+	fmt.Println("Save new version to cache", latestRelease.TagName)
+	cache.Save(repo.Name, latestRelease.TagName)
 }
 
-func isAvailableNewVersion(release api.Release) bool {
-	if cache.IsExists(release) == false {
-		cache.Save(release)
+func isAvailableNewVersion(repo infrastructure.RepositoryConfig, release api.Release) bool {
+	if cache.IsExists(repo.Name) == false {
 		return false
 	}
 
-	version := cache.GetCurrentVersion(release)
+	version := cache.GetCurrentVersion(repo.Name)
 	var isAvailable = version != release.TagName
 
 	if isAvailable {
@@ -93,7 +94,4 @@ func notify(release api.Release, name string) {
 	)
 
 	telegram.SendMessage(chatId, message, botToken)
-	cache.Save(release)
-
-	fmt.Println("Save new version to cache", release.TagName)
 }
