@@ -1,0 +1,12 @@
+{
+  "telegram": {
+    "new_version_message": "✅ *%s:* available new version *%s*!\n\n%s",
+    "chat_id": 0
+  },
+  "repositories": [
+    {
+      "name": "Go Notifier",
+      "url": "https://github.com/maffinca69/go-notifier"
+    }
+  ]
+}
