@@ -1,0 +1,20 @@
+{
+  "telegram": {
+    "new_version_message": "✅ *%s:* available new version *%s*!\n\n%s",
+    "chat_id": 239095324
+  },
+  "repositories": [
+    {
+      "name": "Immich",
+      "url": "https://github.com/immich-app/immich"
+    },
+    {
+      "name": "Fizcult Backend",
+      "url": "https://github.com/evoxeed/project-fizcult-backend"
+    },
+    {
+      "name": "Selfbot",
+      "url": "https://github.com/maffinca69/selfbot"
+    }
+  ]
+}
