@@ -68,6 +68,7 @@ func checkUpdates() {
 
 func isAvailableNewVersion(release api.Release) bool {
 	if !cache.IsExists(release) {
+		cache.Save(release)
 		return false
 	}
 

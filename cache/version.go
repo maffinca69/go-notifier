@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"release-notifier/api"
 	"release-notifier/infrastructure"
 )
@@ -32,14 +31,11 @@ func IsExists(release api.Release) bool {
 
 	client := infrastructure.GetClient()
 	key := getCacheKey(release)
-	if exists, _ := client.Exists(ctx, key).Result(); exists == 0 {
-		client.Set(ctx, key, release.TagName, 0)
-		return false
-	}
+	exists, _ := client.Exists(ctx, key).Result()
 
-	return true
+	return exists != 0
 }
 
 func getCacheKey(release api.Release) string {
-	return fmt.Sprintf("%s_%s", release.Url, release.TagName)
+	return release.Url
 }
