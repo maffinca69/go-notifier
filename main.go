@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
+	"github.com/xlab/closer"
 	"log"
 	"os"
 	"release-notifier/api"
 	"release-notifier/cache"
 	"release-notifier/telegram"
 	"sync"
-	"time"
 )
 
 type Repository struct {
@@ -32,23 +33,38 @@ type Config struct {
 const ConfigName = "config.json"
 
 func init() {
-	// loads values from .env into the system
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
 	}
 }
 
 func main() {
-	start := time.Now()
-	defer fmt.Println("Execution Time: ", time.Since(start))
+	closer.Bind(main)
+	go func() {
+		c := cron.New()
 
-	var payload = loadConfig()
+		var config = loadConfig()
+		_, err := c.AddFunc("* * * * *", func() { checkUpdates(config) })
+		if err != nil {
+			panic("Error start schedule function")
+		}
 
+		c.Start()
+
+		closer.Close()
+	}()
+
+	closer.Hold()
+}
+
+func checkUpdates(config Config) {
 	ctx := context.Background()
 	var wg sync.WaitGroup
 
-	for _, repo := range payload.Repository {
-		wg.Add(1)
+	var count = len(config.Repository)
+	wg.Add(count)
+
+	for _, repo := range config.Repository {
 		fmt.Println("Checking new version for:", repo.Name)
 		repo := repo
 		go func() {
@@ -63,7 +79,7 @@ func main() {
 			var latestRelease = releases[0]
 
 			if isAvailableNewVersion(ctx, latestRelease) {
-				notify(ctx, payload, latestRelease, repo.Name)
+				notify(ctx, config, latestRelease, repo.Name)
 			}
 		}()
 	}
@@ -72,18 +88,10 @@ func main() {
 }
 
 func loadConfig() Config {
-	content, err := os.ReadFile(ConfigName)
-	if err != nil {
-		log.Fatal("Error when opening file: ", err)
-	}
-
+	content, _ := os.ReadFile(ConfigName)
 	payload := Config{}
 
-	err = json.Unmarshal(content, &payload)
-	if err != nil {
-		log.Fatal("Error during Unmarshal(): ", err)
-	}
-
+	json.Unmarshal(content, &payload)
 	return payload
 }
 
