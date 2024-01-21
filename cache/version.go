@@ -18,7 +18,7 @@ func GetCurrentVersion(release api.Release) string {
 
 func Save(release api.Release) {
 	ctx := context.Background()
-	var key = infrastructure.GetCacheKey(release)
+	var key = getCacheKey(release)
 
 	client := infrastructure.GetClient()
 	if err := client.Set(ctx, key, release.TagName, 0).Err(); err != nil {
@@ -31,9 +31,12 @@ func IsExists(release api.Release) bool {
 
 	client := infrastructure.GetClient()
 	key := getCacheKey(release)
-	exists, _ := client.Exists(ctx, key).Result()
+	exists, err := client.Exists(ctx, key).Result()
+	if err != nil {
+		panic(err)
+	}
 
-	return exists != 0
+	return exists == 1
 }
 
 func getCacheKey(release api.Release) string {

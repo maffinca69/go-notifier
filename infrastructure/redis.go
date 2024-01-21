@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"os"
-	"release-notifier/api"
 )
 
 var clientInstance *redis.Client
@@ -29,8 +28,4 @@ func setupClient() *redis.Client {
 	})
 
 	return client
-}
-
-func GetCacheKey(release api.Release) string {
-	return fmt.Sprintf("%s_%s", release.Url, release.TagName)
 }

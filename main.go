@@ -28,7 +28,6 @@ func main() {
 	}
 
 	c.Start()
-	closer.Close()
 
 	closer.Hold()
 }
@@ -36,15 +35,17 @@ func main() {
 func checkUpdates() {
 	var wg sync.WaitGroup
 
-	var count = len(infrastructure.GetConfig().Repository)
-	wg.Add(count)
-
 	for _, repo := range infrastructure.GetConfig().Repository {
-		defer wg.Done()
-		go notifyIfNeeded(repo)
+		wg.Add(1)
+		repo := repo
+		go func() {
+			defer wg.Done()
+			notifyIfNeeded(repo)
+		}()
 	}
-
 	wg.Wait()
+
+	closer.Close()
 }
 
 func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
@@ -66,7 +67,7 @@ func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
 }
 
 func isAvailableNewVersion(release api.Release) bool {
-	if !cache.IsExists(release) {
+	if cache.IsExists(release) == false {
 		cache.Save(release)
 		return false
 	}
