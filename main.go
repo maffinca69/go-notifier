@@ -72,7 +72,7 @@ func isAvailableNewVersion(repo infrastructure.RepositoryConfig, release *github
 	if isAvailable {
 		fmt.Println(fmt.Sprintf("%s: new version available! %s", repo.Name, version))
 	} else {
-		fmt.Println(fmt.Sprintf("%s: New version not available. Current version", repo.Name))
+		fmt.Println(fmt.Sprintf("%s: New version not available. Current version %s", repo.Name, version))
 	}
 
 	return isAvailable
