@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  app:
+    build: ../
+    working_dir: /app
+    volumes:
+      - ./../:/app
+    restart: unless-stopped
+  redis:
+    restart: unless-stopped
+    image: redis:alpine

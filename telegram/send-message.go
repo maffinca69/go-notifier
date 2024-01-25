@@ -10,25 +10,31 @@ import (
 
 const ApiTelegramUrl = "https://api.telegram.org/bot%s/sendMessage"
 
-type TelegramResponse struct {
+type Response struct {
 	Success bool `json:"ok"`
 }
 
-type TelegramRequest struct {
+type QueryParam struct {
 	key   string
 	value string
 }
 
-func SendMessage(chatId int64, message string, botToken string) {
-	var apiUrl = fmt.Sprintf(ApiTelegramUrl, botToken)
-	var params = []TelegramRequest{
+type Request struct {
+	ChatId   int64
+	Message  string
+	BotToken string
+}
+
+func SendMessage(request Request) {
+	var apiUrl = fmt.Sprintf(ApiTelegramUrl, request.BotToken)
+	var params = []QueryParam{
 		{
 			key:   "chat_id",
-			value: strconv.FormatInt(chatId, 10),
+			value: strconv.FormatInt(request.ChatId, 10),
 		},
 		{
 			key:   "text",
-			value: message,
+			value: request.Message,
 		},
 		{
 			key:   "parse_mode",
@@ -41,7 +47,7 @@ func SendMessage(chatId int64, message string, botToken string) {
 	}
 }
 
-func execute(httpUrl string, params []TelegramRequest) TelegramResponse {
+func execute(httpUrl string, params []QueryParam) Response {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", httpUrl, nil)
 	if err != nil {
@@ -58,6 +64,7 @@ func execute(httpUrl string, params []TelegramRequest) TelegramResponse {
 
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
+
 	if err != nil {
 		panic("Error sending HTTP request")
 	}
@@ -67,7 +74,7 @@ func execute(httpUrl string, params []TelegramRequest) TelegramResponse {
 		panic("Error reading HTTP response body")
 	}
 
-	var payload TelegramResponse
+	var payload Response
 	err = json.Unmarshal(body, &payload)
 
 	return payload

@@ -5,9 +5,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"github.com/xlab/closer"
-	"os"
-	"release-notifier/api"
 	"release-notifier/cache"
+	"release-notifier/github"
 	"release-notifier/infrastructure"
 	"release-notifier/telegram"
 	"sync"
@@ -29,7 +28,6 @@ func main() {
 	c.Start()
 
 	closer.Hold()
-	closer.Close()
 }
 
 func checkUpdates() {
@@ -49,24 +47,20 @@ func checkUpdates() {
 
 func notifyIfNeeded(repo infrastructure.RepositoryConfig) {
 	fmt.Println("Checking new version for:", repo.Name)
-	var (
-		githubToken = os.Getenv("GITHUB_TOKEN")
-		releases    = api.GetReleases(repo.Url, githubToken)
-	)
-	if releases == nil || len(releases) == 0 {
-		fmt.Println(fmt.Sprintf("%s: not found releases. Skip", repo.Name))
+	var latestRelease = github.GetLatestRelease(repo.Url)
+
+	if latestRelease == nil {
+		fmt.Println(fmt.Sprintf("%s: not found latest release. Skip", repo.Name))
 		return
 	}
 
-	var latestRelease = releases[0]
-
 	if isAvailableNewVersion(repo, latestRelease) {
-		notify(latestRelease, repo.Name)
+		telegram.Notify(latestRelease, repo.Name)
 		cache.Save(repo.Name, latestRelease.TagName)
 	}
 }
 
-func isAvailableNewVersion(repo infrastructure.RepositoryConfig, release api.Release) bool {
+func isAvailableNewVersion(repo infrastructure.RepositoryConfig, release *github.Release) bool {
 	if cache.IsExists(repo.Name) == false {
 		cache.Save(repo.Name, release.TagName)
 		return false
@@ -76,21 +70,10 @@ func isAvailableNewVersion(repo infrastructure.RepositoryConfig, release api.Rel
 	var isAvailable = version != release.TagName
 
 	if isAvailable {
-		fmt.Println("New version available!", version)
+		fmt.Println(fmt.Sprintf("%s: new version available! %s", repo.Name, version))
 	} else {
-		fmt.Println("New version not available. Current version", version)
+		fmt.Println(fmt.Sprintf("%s: New version not available. Current version", repo.Name))
 	}
 
 	return isAvailable
-}
-
-func notify(release api.Release, name string) {
-	var (
-		chatId   = infrastructure.GetConfig().TelegramConfig.ChatID
-		text     = infrastructure.GetConfig().TelegramConfig.NewVersionMessage
-		message  = fmt.Sprintf(text, name, release.TagName, release.Url)
-		botToken = os.Getenv("TELEGRAM_BOT_TOKEN")
-	)
-
-	telegram.SendMessage(chatId, message, botToken)
 }

@@ -1,10 +1,11 @@
-package api
+package github
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 type Release struct {
@@ -13,25 +14,27 @@ type Release struct {
 	RepositoryUrl string
 }
 
-const APIReleasesUrl = "https://api.github.com/repos/%s/%s/releases"
+const APIReleasesUrl = "https://api.github.com/repos/%s/%s/releases/latest"
 
-func GetReleases(htmlUrl string, accessToken string) []Release {
-	var repo, owner string = ParseRepositoryUrl(htmlUrl)
+func GetLatestRelease(repositoryUrl string) *Release {
+	var repo, owner string = ParseRepositoryUrl(repositoryUrl)
 
 	var httpUrl = fmt.Sprintf(APIReleasesUrl, repo, owner)
-	return sendRequest(httpUrl, accessToken)
+	return sendRequest(httpUrl)
 }
 
-func sendRequest(httpUrl string, accessToken string) []Release {
+func sendRequest(repositoryUrl string) (release *Release) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", httpUrl, nil)
+	req, err := http.NewRequest("GET", repositoryUrl, nil)
+
 	if err != nil {
 		panic("Error creating HTTP request")
 	}
-	req.Header.Add("Authorization", "Bearer "+accessToken)
+	req.Header.Add("Authorization", "Bearer "+os.Getenv("GITHUB_TOKEN"))
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		panic("Error sending HTTP request")
 	}
@@ -45,9 +48,7 @@ func sendRequest(httpUrl string, accessToken string) []Release {
 		panic("Error reading HTTP response body")
 	}
 
-	releases := make([]Release, 0)
+	err = json.Unmarshal(body, &release)
 
-	json.Unmarshal(body, &releases)
-
-	return releases
+	return release
 }
