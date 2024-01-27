@@ -8,8 +8,10 @@ import (
 	"release-notifier/cache"
 	"release-notifier/github"
 	"release-notifier/infrastructure"
+	"release-notifier/rate_limiter"
 	"release-notifier/telegram"
 	"sync"
+	"time"
 )
 
 func init() {
@@ -19,22 +21,30 @@ func init() {
 }
 
 func main() {
+	setupCron()
+	telegram.LongPulling()
+
+	closer.Hold()
+}
+
+func setupCron() {
 	c := cron.New()
 
-	if _, err := c.AddFunc(infrastructure.GetConfig().CronExpression, func() { checkUpdates() }); err != nil {
+	if _, err := c.AddFunc(infrastructure.Config().CronExpression, func() { checkUpdates() }); err != nil {
 		panic("Error start schedule function")
 	}
 
 	c.Start()
-
-	closer.Hold()
 }
 
 func checkUpdates() {
 	var wg sync.WaitGroup
 
-	for _, repo := range infrastructure.GetConfig().Repository {
+	rateLimit := rate_limiter.NewLimiter(1*time.Second, 30)
+	for _, repo := range infrastructure.Config().Repository {
+		rateLimit.Wait()
 		wg.Add(1)
+
 		repo := repo
 		go func() {
 			defer wg.Done()

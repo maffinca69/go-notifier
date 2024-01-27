@@ -8,7 +8,7 @@ import (
 
 var clientInstance *redis.Client
 
-func GetClient() *redis.Client {
+func RedisClient() *redis.Client {
 	if clientInstance == nil {
 		clientInstance = setupClient()
 	}

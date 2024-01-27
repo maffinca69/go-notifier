@@ -15,7 +15,7 @@ type TelegramConfig struct {
 	NewVersionMessage string `json:"new_version_message"`
 }
 
-type Config struct {
+type Configuration struct {
 	Repository     []RepositoryConfig `json:"repositories"`
 	TelegramConfig TelegramConfig     `json:"telegram"`
 	CronExpression string             `json:"cron_expression"`
@@ -23,9 +23,9 @@ type Config struct {
 
 const ConfigName = "config.json"
 
-var configInstance *Config
+var configInstance *Configuration
 
-func GetConfig() *Config {
+func Config() *Configuration {
 	if configInstance == nil {
 		configInstance = setupConfig()
 	}
@@ -33,9 +33,9 @@ func GetConfig() *Config {
 	return configInstance
 }
 
-func setupConfig() *Config {
+func setupConfig() *Configuration {
 	content, _ := os.ReadFile(ConfigName)
-	payload := &Config{}
+	payload := &Configuration{}
 
 	if err := json.Unmarshal(content, &payload); err != nil {
 		panic("Error load config " + ConfigName)
