@@ -16,6 +16,8 @@ func ResolveCommand(command string) Command {
 		return commands.List{}
 	case "ping":
 		return commands.Ping{}
+	case "me":
+		return commands.GetMeInfo{}
 	default:
 		_ = errors.New("No implemented yet: " + command)
 		return nil

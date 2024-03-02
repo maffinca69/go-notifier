@@ -16,9 +16,11 @@ type TelegramConfig struct {
 }
 
 type Configuration struct {
-	Repository     []RepositoryConfig `json:"repositories"`
-	TelegramConfig TelegramConfig     `json:"telegram"`
-	CronExpression string             `json:"cron_expression"`
+	Repository      []RepositoryConfig `json:"repositories"`
+	TelegramConfig  TelegramConfig     `json:"telegram"`
+	CronExpression  string             `json:"cron_expression"`
+	AllowedUsers    []int64            `json:"allowed_users"`
+	AllowedCommands []string           `json:"allowed_commands"`
 }
 
 const ConfigName = "config.json"

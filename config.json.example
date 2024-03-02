@@ -8,5 +8,11 @@
       "name": "Go Notifier",
       "url": "https://github.com/maffinca69/go-notifier"
     }
+  ],
+  "allowed_users": [
+    121212312123
+  ],
+  "allowed_commands": [
+    "me"
   ]
 }
